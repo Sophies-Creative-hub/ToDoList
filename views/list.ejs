@@ -9,8 +9,16 @@
 </head>
 
 <body>
-    <h1>It's a
-        <%= kindOfDay %>!</h1>
+     <h1 style="color:purple"> <%= kindOfDay %> </h1>
+  
+     <ul>
+        <% for(let i = 0; i<newListToDos.length;i++){ %>
+            <li> <%=newListToDos[i]%> </li>
+        <% } %>
+     </ul>
+     <form action="/" method="post">
+        <input type="text" name="nextToDo" placeholder="Type in your next Task">
+        <button type="submit">Add Task</button>
 </body>
 
 </html>
