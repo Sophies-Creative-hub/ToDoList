@@ -1,6 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
+const _ = require("lodash");
 
 const app = express();
 
@@ -57,32 +58,61 @@ app.get("/", (req, res) => {
         });
 });
 
-
 app.post("/", (req, res) => {
     let nextToDoName = req.body.nextToDo;
-    let nextToDo = new Item({
+    let listName = req.body.list;
+
+    const item = new Item({
         name: nextToDoName
     });
-    nextToDo.save();
-    res.redirect("/");
-})
+    if (listName === 'Today') {
+        item.save();
+        res.redirect('/');
+    } else {
+        List.findOne({ name: listName })
+            .then(foundList => {
+                foundList.items.push(item);
+                foundList.save();
+            })
+            .then(() => {
+                res.redirect('/' + listName);
+            })
+            .catch(err => {
+                console.log(err);
+            });
+    }
+});
+
 
 app.post("/delete", (req, res) => {
     const checkedItemId = req.body.checkbox;
-    Item.findByIdAndRemove(checkedItemId)
-      .then(() => {
-        console.log('successfully deleted item');
-        res.redirect('/');
-      })
-      .catch(err => {
-        console.log(err);
-      });
-  });
-  
-  
+    const listName = req.body.listTitleInput;
+    if(listName === 'Today') {
+        // If the list is "Today", delete the item and redirect to the homepage "/"
+        Item.findByIdAndRemove(checkedItemId)
+        .then(() => {
+            console.log('successfully deleted item');
+            res.redirect('/');
+        })
+        .catch(err => {
+            console.log(err);
+        });
+    } else {
+        // If the list is not "Today", delete the item from the list and redirect to the list's route
+        List.findOneAndUpdate({ name: listName }, { $pull: { items: { _id: checkedItemId } } })
+            .then(() => {  
+                const listNameOnly= listName[0];
+                res.redirect(`/${listNameOnly}`);
+            })
+            .catch(err => {
+                console.log(err);
+            });
+    }
 
-  app.get("/:categoryName", (req, res) => {
-    const categoryName = req.params.categoryName;
+});
+
+app.get("/:categoryName", (req, res) => {
+    const categoryName = _.capitalize(req.params.categoryName);
 
     List.findOne({name: categoryName})
         .then(foundList => {
